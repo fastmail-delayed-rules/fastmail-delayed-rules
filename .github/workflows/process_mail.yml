@@ -2,7 +2,7 @@ name: Process mail
 on:
   push:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '9 */3 * * *' # every 3rd hour, at minute 9
 jobs:
   process_mail:
     environment: production
