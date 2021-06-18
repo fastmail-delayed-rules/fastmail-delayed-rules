@@ -1,10 +1,10 @@
-name: 15-minute-cron
+name: Process mail
 on:
   push:
   schedule:
     - cron: '*/15 * * * *'
 jobs:
-  cron:
+  process_mail:
     environment: production
     runs-on: ubuntu-latest
     steps:

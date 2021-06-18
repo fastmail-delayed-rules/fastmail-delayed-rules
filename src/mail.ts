@@ -98,5 +98,8 @@ const hoursPast = hours => {
 }
 
 // Execute
-mail()
+mail().catch((err) => {
+  console.log(err)
+  process.exit(1)
+})
 
