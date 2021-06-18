@@ -15,4 +15,6 @@ jobs:
           node-version: 14.x
       - run: npm ci
       - run: npm run build
-      - run: AUTHORIZATION=${{ secrets.AUTHORIZATION }} npm run mail
+      - run: npm run mail
+        env:
+          AUTHORIZATION: ${{ secrets.AUTHORIZATION }}
