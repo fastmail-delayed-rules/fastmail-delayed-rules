@@ -16,8 +16,9 @@ const mail = async () => {
 
   const inbox = mailboxes.list.find(mailbox => mailbox.role === 'inbox')
   const archive = mailboxes.list.find(mailbox => mailbox.role === 'archive')
+  const preventArchive = mailboxes.list.find(mailbox => mailbox.name === 'Prevent Archive')
 
-  let mails = await request(...config.flatMap(c => [
+  let mailsAndDetails = await request(...config.flatMap((c, i) => [
     'Email/query',
     {
       filter: {
@@ -26,25 +27,49 @@ const mail = async () => {
         before: c.search.before,
         notKeyword: c.search.isUnread ? '$seen' : undefined
       }
+    },
+    'Email/get',
+    {
+      '#ids': {
+        resultOf: String(i * 2),
+        name: 'Email/query',
+        path: '/ids'
+      },
+      properties: [ 'mailboxIds' ]
     }
   ]))
 
-  if (!mails.some(m => m.ids.length)) {
-    console.log('Ran, nothing to do')
-    return
-  }
-  console.log(config.map((c, index) => {
-    const count = mails[index].ids.length
+  let mails = mailsAndDetails.filter((_, index) => index % 2 === 0)
+  let mailDetails = mailsAndDetails.filter((_, index) => index % 2 === 1)
+
+  const toPrint = config.map((c, index) => {
+    const ids = mails[index].ids
+      .filter(id =>
+        // Skip over emails that have the "Prevent Archive" label
+        mailDetails[index].list
+          .some(l => l.id === id && !(
+            l.mailboxIds[preventArchive.id] && c.search.allowPreventArchive
+          ))
+      )
+    const count = ids.length
     if (!count) return null
     return {
       name: c.name,
       count
     }
-  }).filter(Boolean))
+  }).filter(Boolean)
+  console.log(toPrint.length ? toPrint : 'Ran, nothing to do')
 
   const update = mails.flatMap((mail, index) => {
     const configItem = config[index]
-    return mail.ids.map(mailId => [
+    const ids = mail.ids
+      .filter(id =>
+        // Skip over emails that have the "Prevent Archive" label
+        mailDetails[index].list
+          .some(l => l.id === id && !(
+            l.mailboxIds[preventArchive.id] && configItem.search.allowPreventArchive
+          ))      )
+    return ids.map(mailId => [
       mailId,
       {
         [`mailboxIds/${archive.id}`]: configItem.action.archive ? true : undefined,
@@ -54,11 +79,22 @@ const mail = async () => {
     ])
   })
 
-  await request('Email/set', { update: Object.fromEntries(update) })
+  if (update.length) {
+    await request('Email/set', { update: Object.fromEntries(update) })
+  }
 
   console.log({
     archived: update.filter(u => u[1][`mailboxIds/${archive.id}`]).length,
-    markedRead: update.filter(u => u[1][`keywords/$seen`]).length
+    markedRead: update.filter(u => u[1][`keywords/$seen`]).length,
+    archivePrevented: mails.flatMap((m, index) => m.ids
+      .filter(id =>
+        // Find emails that have the "Prevent Archive" label
+        mailDetails[index].list
+          .some(l => l.id === id && (
+            l.mailboxIds[preventArchive.id] && config[index].search.allowPreventArchive
+          ))
+      )
+    ).length
   })
 }
 
