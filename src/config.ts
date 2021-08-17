@@ -39,7 +39,9 @@ type Config = {
     in?: 'inbox' | 'archive',
     before?: string,
     from?: string,
-    isUnread?: boolean
+    subject?: string,
+    isUnread?: boolean,
+    allowPreventArchive?: true
   },
   action: {
     archive?: boolean,
