@@ -1,3 +1,4 @@
+#!/bin/bash
 read -p "Fastmail email: " EMAIL
 read -p "Fastmail password: " -s PASSWORD
 echo ""
