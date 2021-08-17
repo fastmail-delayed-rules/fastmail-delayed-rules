@@ -24,6 +24,8 @@ Each object in the [config](./src/config.ts) list has 3 fields:
 
 ### Authorization
 
+⚠️ **WARNING**: _Never_ commit your authorization token to git!
+
 Access must be granted to your Fastmail inbox in order for the script to work. To generate an Authorization token, run
 
     $ ./generateAuthorization.sh
