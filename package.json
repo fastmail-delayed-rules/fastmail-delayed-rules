@@ -7,7 +7,7 @@
     "mail": "node ./build/mail.js"
   },
   "dependencies": {
-    "next": "11.0.0",
+    "dotenv": "^10.0.0",
     "node-fetch": "^2.6.1"
   },
   "devDependencies": {
