@@ -1,0 +1,1 @@
+* * * * * /usr/src/app/run.sh  >> /var/log/mail.log 2>&1

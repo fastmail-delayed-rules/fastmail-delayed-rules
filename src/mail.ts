@@ -2,16 +2,16 @@ require('dotenv').config()
 import fetch from 'node-fetch';
 import config from './config';
 
-const mail = async () => {
+const mail = async (authorization: string) => {
   let session = await (await fetch('https://jmap.fastmail.com/.well-known/jmap', {
     headers: {
-      "Authorization": process.env.AUTHORIZATION
+      "Authorization": authorization
     }
   })).json();
 
   let accountId = session['primaryAccounts']['urn:ietf:params:jmap:mail'];
 
-  const request = getRequest(process.env.AUTHORIZATION, accountId)
+  const request = getRequest(authorization, accountId)
 
   let [mailboxes] = await request('Mailbox/get', { ids: null })
 
@@ -134,8 +134,29 @@ const hoursPast = hours => {
   return d.toISOString().replace(/\.\d+Z/, 'Z')
 }
 
+const getAuth = async (): Promise<string> => {
+  let auth = process.env.AUTHORIZATION
+  if (!auth) {
+    auth = await new Promise((resolve, reject) => {
+      process.stdin.on('data', data => {
+        const auth = data.toString().trim()
+        if (auth) {
+          resolve(auth)
+        } else {
+          reject('No stdin auth')
+        }
+      })
+    });
+  }
+
+  if (!auth) {
+    throw new Error('No AUTHORIZATION env var')
+  }
+  return auth
+}
+
 // Execute
-mail().catch((err) => {
+getAuth().then((auth) => mail(auth)).catch((err) => {
   console.log(err)
   process.exit(1)
 })
